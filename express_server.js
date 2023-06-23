@@ -46,6 +46,15 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+app.get("/u/:id", (req, res) => {
+  const id = req.params.id;
+  const longURL = urlDatabase[id];
+  
+
+  
+  res.redirect(longURL);
+})
+
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
@@ -60,7 +69,7 @@ app.post("/urls", (req, res) => {
   // Store the longURL and shortURL in the urlDatabase
   urlDatabase[shortURL] = longURL;
 
-  res.redirect(`/urls/${shortURL}`);
+  res.redirect(302, `/u/${shortURL}`);
 });
 
 app.listen(PORT, () => {
