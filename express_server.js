@@ -70,6 +70,18 @@ app.post("/urls", (req, res) => {
   res.redirect(302, `/u/${shortURL}`);
 });
 
+app.post('/urls/:id/delete', (req, res) => {
+  const id = req.params.id;
+
+  // Check if the URL with the specified ID exists in the urlDatabase
+  if (urlDatabase[id]) {
+    delete urlDatabase[id]; // Delete the URL resource from the urlDatabase
+    res.redirect('/urls'); // Redirect the user back to the URL index page after deletion
+  } else {
+    res.status(404).send('URL not found'); // Handle the case where the URL is not found
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
