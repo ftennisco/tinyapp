@@ -1,10 +1,18 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
+const cookieParser = require('cookie-parser');
 
 app.set("view engine", "ejs");
 
+app.use(cookieParser());
+
 app.use(express.urlencoded({ extended: true }));
+
+app.use((req, res, next) => {
+  res.locals.username = req.cookies.username;
+  next();
+});
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -42,7 +50,11 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { 
+    urls: urlDatabase,
+    username: req.cookies.username,
+    // ... any other variables you want to pass
+   };
   res.render("urls_index", templateVars);
 });
 

@@ -18,9 +18,12 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
       <form method="POST" action="/login" class="form-inline">
-        <input type="test" name="username" class="form-control mr-sm-2" placeholder="Username" required>
+        <input type="text" name="username" class="form-control mr-sm-2" placeholder="Username" required>
         <button type="submit" class="btn btn-outline-light">Login</button>
       </form>
+      <% if (username) { %>
+        <span class="navbar-text ml-3">Logged in as <%= username %></span>
+      <% } %>
     </div>
   </nav>
 </header>
