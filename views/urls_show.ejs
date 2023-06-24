@@ -14,8 +14,14 @@
     <div class="card text-center">
       <div class="card-header"></div>
       <div class="card-body">
-        <h5 class="card-title">Long URL for: <%= longURL %>
-        </h5>
+        <h5 class="card-title">Long URL for: <%= longURL %></h5>
+        <form method="POST" action="/urls/<%= id %>/update">
+          <div class="form-group">
+            <label for="updatedURL">Updated Long URL:</label>
+            <input type="text" class="form-control" id="updatedURL" name="updatedURL" placeholder="Enter updated URL">
+          </div>
+          <button type="submit" class="btn btn-primary">Update URL</button>
+        </form>
         <p class="card-text">
           Short URL ID: <a href="/u/<%= id %>">
             <%= id %>
