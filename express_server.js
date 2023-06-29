@@ -94,6 +94,10 @@ app.get("/register", (req, res) => {
   res.render("register");
 });
 
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = generateRandomString();
@@ -128,17 +132,18 @@ app.post('/urls/:id', (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const email = req.body.email;
+  const { email, password } = req.body;
 
   // Find the user object with the matching email in the users object
-  const user = Object.values(users).find(u => u.email === email);
+  const user = Object.values(users).find(user => user.email === email);
 
-  if (user) {
+  if (user && user.password == password) {
     // Set the 'user_id' cookie with the user's ID
     res.cookie("user_id", user.id);
+    res.redirect("/urls");
+  } else {
+    res.status(401).send("Invalid email or password");
   }
-
-  res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
