@@ -10,13 +10,31 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
-  res.locals.username = req.cookies.username;
+  const userId = req.cookies.user_id;
+  if (userId && users[userId]) {
+    res.locals.user = users[userId];
+  } else {
+    res.locals.user = null;
+  }
   next();
 });
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
+};
+
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
 };
 
 function generateRandomString() {
@@ -52,7 +70,7 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = { 
     urls: urlDatabase,
-    username: req.cookies.username,
+    user: res.locals.user,
     // ... any other variables you want to pass
    };
   res.render("urls_index", templateVars);
@@ -70,6 +88,10 @@ app.get("/urls/:id", (req, res) => {
   const longURL = urlDatabase[id];
   const templateVars = { id: id, longURL: longURL };
   res.render("urls_show", templateVars);
+});
+
+app.get("/register", (req, res) => {
+  res.render("register");
 });
 
 app.post("/urls", (req, res) => {
@@ -106,19 +128,60 @@ app.post('/urls/:id', (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const username = req.body.username;
+  const email = req.body.email;
 
-  // Set the 'Set-Cookie' header to set the 'username' cookie
-  res.setHeader("Set-Cookie", `username=${username}`);
+  // Find the user object with the matching email in the users object
+  const user = Object.values(users).find(u => u.email === email);
+
+  if (user) {
+    // Set the 'user_id' cookie with the user's ID
+    res.cookie("user_id", user.id);
+  }
 
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  // Clear the 'username' cookie
-  res.clearCookie("username");
+  // Clear the 'user_id' cookie
+  res.clearCookie("user_id");
 
   // Redirect the user back to the /urls page
+  res.redirect("/urls");
+});
+
+app.post("/register", (req, res) => {
+  const { email, password } = req.body;
+
+  // Check if the email or password are empty strings
+  if (!email || !password) {
+    res.status(400).send("Email and password cannot be empty.");
+    return;
+  }
+
+  // Check if the email is already registered
+  const existingUser = Object.values(users).find(user => user.email === email);
+  if (existingUser) {
+    res.status(400).send("Email already registered.");
+    return;
+  }
+  
+  // Generate a random user ID
+  const userId = generateRandomString(); 
+
+  // Create a new user object
+  const newUser = {
+    if: userId,
+    email: email,
+    password: password
+  };
+
+  // Add the new user to the users object
+  users[userId] = newUser;
+
+  // Set the 'user_id' cooke with the generated user ID
+  res.cookie("user_id", userId);
+
+  // Redirect the user to the /urls page
   res.redirect("/urls");
 });
 
