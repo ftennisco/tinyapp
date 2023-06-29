@@ -131,18 +131,27 @@ app.post('/urls/:id', (req, res) => {
   res.redirect('/urls');
 });
 
+const getUserByEmail = (email, userDb) => {
+  for (const userId in userDb) {
+    if (userDb[userId].email === email) {
+      return userDb[userId]
+    }
+  } 
+  return null 
+};
+
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
-  // Find the user object with the matching email in the users object
-  const user = Object.values(users).find(user => user.email === email);
-
-  if (user && user.password == password) {
-    // Set the 'user_id' cookie with the user's ID
-    res.cookie("user_id", user.id);
-    res.redirect("/urls");
+ const userFound = getUserByEmail(email, users)
+ console.log("this is userFound", userFound)
+  if (!userFound) {
+    return res.status(403).send("User not found"); // Return 403 if user is not found
+  } else if (userFound.password !== password) {
+    return res.status(403).send("Incorrect password"); // Return 403 if password is incorrect
   } else {
-    res.status(401).send("Invalid email or password");
+    res.cookie("user_id", userFound.id); // Set the user_id cookie with the matched user's ID
+    return res.redirect("/urls"); // Redirect to /urls after successful login
   }
 });
 
@@ -150,8 +159,8 @@ app.post("/logout", (req, res) => {
   // Clear the 'user_id' cookie
   res.clearCookie("user_id");
 
-  // Redirect the user back to the /urls page
-  res.redirect("/urls");
+  // Redirect the user back to the login page
+  res.redirect("/login");
 });
 
 app.post("/register", (req, res) => {
@@ -175,7 +184,7 @@ app.post("/register", (req, res) => {
 
   // Create a new user object
   const newUser = {
-    if: userId,
+    id: userId,
     email: email,
     password: password
   };
