@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
+const { getUserByEmail } = require('./helpers');
 
 app.set("view engine", "ejs");
 
@@ -69,15 +70,6 @@ function getUserURLs(userID) {
     }
   }
   return userURLs;
-};
-
-const getUserByEmail = (email, userDb) => {
-  for (const userId in userDb) {
-    if (userDb[userId].email === email) {
-      return userDb[userId]
-    }
-  }
-  return null
 };
 
 app.get("/", (req, res) => {
