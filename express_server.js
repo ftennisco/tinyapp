@@ -20,8 +20,14 @@ app.use((req, res, next) => {
 });
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ481W",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ481W",
+  },
 };
 
 const users = {
@@ -50,6 +56,16 @@ function generateRandomString() {
 
   return result;
 }
+
+function getUserURLs(userID) {
+  const userURLs = {};
+  for (const key in urlDatabase) {
+    if (urlDatabase[key].userID === userID) {
+      userURLs[key] = urlDatabase[key];
+    }
+  }
+  return userURLs;
+};
 
 const getUserByEmail = (email, userDb) => {
   for (const userId in userDb) {
@@ -82,10 +98,19 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  if (!res.locals.user) {
+    const templateVars = {
+      errorMessage: "You need to be logged in to view URLs. Please log in or register.",
+    };
+    res.render("error", templateVars);
+    return;
+  }
+
+  const userURLs = getUserURLs(res.locals.user.id);
+
   const templateVars = { 
-    urls: urlDatabase,
+    urls: userURLs,
     user: res.locals.user,
-    // ... any other variables you want to pass
    };
   res.render("urls_index", templateVars);
 });
@@ -103,9 +128,27 @@ app.get("/u/:id", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
-  const longURL = urlDatabase[id];
-  const templateVars = { id: id, longURL: longURL };
-  res.render("urls_show", templateVars);
+  const url = urlDatabase[id];
+
+  // Check if the user is logged in
+  if (!res.locals.user) {
+    const templateVars = {
+      errorMessage: "You need to be logged in to view this URL. Please log in or register.",
+    };
+    res.render("error", templateVars);
+    return;
+  }
+
+  // Check if the URL exists and belongs to the logged in user
+  if (url && url.userID === res.locals.user.id) {
+    const templateVars = { id: id, longURL: url.longURL };
+    res.render("urls_show", templateVars);
+  } else {
+    const templateVars = {
+      errorMessage: "URL not found or you do not have permission to access it.",
+    };
+    res.render("error", templateVars);
+  }
 });
 
 app.get("/register", (req, res) => {
@@ -137,33 +180,67 @@ app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = generateRandomString();
 
-  // Store the longURL and shortURL in the urlDatabase
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[shortURL] = {
+    longURL: longURL,
+    userID: res.locals.user.id, // Associate the URL with the logged-in user's ID
+  };
 
   res.redirect(302, `/u/${shortURL}`);
 });
 
 app.post('/urls/:id/delete', (req, res) => {
   const id = req.params.id;
+  const url = urlDatabase[id];
 
-  // Check if the URL with the specified ID exists in the urlDatabase
-  if (urlDatabase[id]) {
-    delete urlDatabase[id]; // Delete the URL resource from the urlDatabase
-    res.redirect('/urls'); // Redirect the user back to the URL index page after deletion
-  } else {
-    res.status(404).send('URL not found'); // Handle the case where the URL is not found
+  // Check if the URL exists
+  if (!url) {
+    res.status(404).send("URL not found");
+    return;
   }
+
+  // Check if the user is logged in
+  if (!res.locals.user) {
+    res.status(401).send("You need to be logged in to delete this URL.");
+    return;
+  }
+
+  // Check if the user owens the URL
+  if (url.userID !== res.locals.user.id) {
+    res.status(403).send("You do not have permission to delete this URL.");
+    return;
+  }
+
+  // Delete the URL
+  delete urlDatabase[id];
+  res.redirect('/urls');
 });
 
 app.post('/urls/:id', (req, res) => {
   const id = req.params.id;
   const updatedURL = req.body.updatedURL;
+  const url = urlDatabase[id];
 
-  // Update the value of the stored long URL based on the new value in req.body
-  // Replace the following code with your actual implementation
-  urls[id] = updatedURL;
+  // Check if the URL exists
+  if (!url) {
+    res.status(404).send("URL not found");
+    return;
+  }
 
-  res.redirect('/urls');
+  // Check if the user is logged in
+  if (!res.locals.user) {
+    res.status(401).send("You need to be logged in to edit this URL.");
+    return;
+  }
+
+  // Check if the user owns the URL
+  if (url.userID !== res.locals.user.id) {
+    res.status(403).send("You do not have permission to edit this URL.");
+    return;
+  }
+
+  // Update the URL
+  url.longURL = updatedURL;
+  res.redirect("/urls");
 });
 
 
