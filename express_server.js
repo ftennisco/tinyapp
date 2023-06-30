@@ -51,6 +51,15 @@ function generateRandomString() {
   return result;
 }
 
+const getUserByEmail = (email, userDb) => {
+  for (const userId in userDb) {
+    if (userDb[userId].email === email) {
+      return userDb[userId]
+    }
+  } 
+  return null 
+};
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -131,14 +140,7 @@ app.post('/urls/:id', (req, res) => {
   res.redirect('/urls');
 });
 
-const getUserByEmail = (email, userDb) => {
-  for (const userId in userDb) {
-    if (userDb[userId].email === email) {
-      return userDb[userId]
-    }
-  } 
-  return null 
-};
+
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
