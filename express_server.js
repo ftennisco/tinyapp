@@ -1,17 +1,33 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 
 app.set("view engine", "ejs");
 
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['some value'],
+}));
 
 app.use(express.urlencoded({ extended: true }));
 
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
+
 app.use((req, res, next) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
   if (userId && users[userId]) {
     res.locals.user = users[userId];
   } else {
@@ -28,19 +44,6 @@ const urlDatabase = {
   i3BoGr: {
     longURL: "https://www.google.ca",
     userID: "aJ481W",
-  },
-};
-
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
   },
 };
 
@@ -260,13 +263,13 @@ app.post("/login", (req, res) => {
     return res.status(403).send("Incorrect password");
   }
 
-  res.cookie("user_id", userFound.id); // Set the user_id cookie with the matched user's ID
+  req.session["user_id"] = userFound.id; // Set the user_id cookie with the matched user's ID
   return res.redirect("/urls"); // Redirect to /urls after successful login
 });
 
 app.post("/logout", (req, res) => {
   // Clear the 'user_id' cookie
-  res.clearCookie("user_id");
+  req.session = null;
 
   // Redirect the user back to the login page
   res.redirect("/login");
@@ -305,7 +308,7 @@ app.post("/register", (req, res) => {
   users[userId] = newUser;
 
   // Set the 'user_id' cookie with the generated user ID
-  res.cookie("user_id", userId);
+  req.session["user_id"] = userId;
 
   // Redirect the user to the /urls page
   res.redirect("/urls");
