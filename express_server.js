@@ -73,7 +73,12 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  // Check if the user is logged in
+  if (!res.locals.user) {
+    res.redirect("/login"); // Redirect to /login if not logged in
+  } else {
+    res.render("urls_new");
+  }
 });
 
 app.get("/urls", (req, res) => {
@@ -89,8 +94,12 @@ app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
 
-  res.redirect(longURL);
-})
+  if (longURL) {
+    res.redirect(longURL); // Redirect to the longURL if it exists
+  } else {
+    res.status(404).send("URL not found"); // Send a 404 Not Found status with an error message if the URL does not exist
+  }
+});
 
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
@@ -100,14 +109,31 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  res.render("register");
+  // Check if the user is already logged in
+  if (res.locals.user) {
+    res.redirect("/urls"); // Redirect to /urls if logged in
+  } else {
+    res.render("register");
+  }
 });
 
 app.get("/login", (req, res) => {
-  res.render("login");
+  // Check if the user is already logged in
+  if (res.locals.user) {
+    res.redirect("/urls");
+  } else {
+    res.render("login");
+  }
 });
 
 app.post("/urls", (req, res) => {
+  // Check if the user is logged in
+  if (!res.locals.user) {
+    //Respond with an error message if not logged in
+    res.status(401).send("You need to be logged in to shorten URLs.");
+    return;
+  }
+
   const longURL = req.body.longURL;
   const shortURL = generateRandomString();
 
