@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require('cookie-parser');
+const bcrypt = require("bcryptjs");
 
 app.set("view engine", "ejs");
 
@@ -45,7 +46,7 @@ const users = {
 
 function generateRandomString() {
   let result = "";
-  const characters = 
+  const characters =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const length = 6;
 
@@ -72,8 +73,8 @@ const getUserByEmail = (email, userDb) => {
     if (userDb[userId].email === email) {
       return userDb[userId]
     }
-  } 
-  return null 
+  }
+  return null
 };
 
 app.get("/", (req, res) => {
@@ -108,10 +109,10 @@ app.get("/urls", (req, res) => {
 
   const userURLs = getUserURLs(res.locals.user.id);
 
-  const templateVars = { 
+  const templateVars = {
     urls: userURLs,
     user: res.locals.user,
-   };
+  };
   res.render("urls_index", templateVars);
 });
 
@@ -243,21 +244,24 @@ app.post('/urls/:id', (req, res) => {
   res.redirect("/urls");
 });
 
-
-
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
- const userFound = getUserByEmail(email, users)
- console.log("this is userFound", userFound)
+  const userFound = getUserByEmail(email, users)
+
   if (!userFound) {
     return res.status(403).send("User not found"); // Return 403 if user is not found
-  } else if (userFound.password !== password) {
-    return res.status(403).send("Incorrect password"); // Return 403 if password is incorrect
-  } else {
-    res.cookie("user_id", userFound.id); // Set the user_id cookie with the matched user's ID
-    return res.redirect("/urls"); // Redirect to /urls after successful login
   }
+
+  // Use bcrypt.compareSync to compare the provided password with the hashed password
+  const passwordMatch = bcrypt.compareSync(password, userFound.password);
+
+  if (!passwordMatch) {
+    return res.status(403).send("Incorrect password");
+  }
+
+  res.cookie("user_id", userFound.id); // Set the user_id cookie with the matched user's ID
+  return res.redirect("/urls"); // Redirect to /urls after successful login
 });
 
 app.post("/logout", (req, res) => {
@@ -283,21 +287,24 @@ app.post("/register", (req, res) => {
     res.status(400).send("Email already registered.");
     return;
   }
-  
-  // Generate a random user ID
-  const userId = generateRandomString(); 
 
-  // Create a new user object
+  // Hash the password using bcrypt
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
+  // Generate a random user ID
+  const userId = generateRandomString();
+
+  // Create a new user object with the hashed password
   const newUser = {
     id: userId,
     email: email,
-    password: password
+    password: hashedPassword
   };
 
   // Add the new user to the users object
   users[userId] = newUser;
 
-  // Set the 'user_id' cooke with the generated user ID
+  // Set the 'user_id' cookie with the generated user ID
   res.cookie("user_id", userId);
 
   // Redirect the user to the /urls page
