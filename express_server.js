@@ -3,13 +3,14 @@ const app = express();
 const PORT = 8080; // default port 8080
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
+const saltRounds = 10;
 const { getUserByEmail } = require('./helpers');
 
 app.set("view engine", "ejs");
 
 app.use(cookieSession({
   name: 'session',
-  keys: ['some value'],
+  keys: ['superSecretKey'],
 }));
 
 app.use(express.urlencoded({ extended: true }));
@@ -18,12 +19,12 @@ const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+    password: bcrypt.hashSync("purple-monkey-dinosaur",saltRounds)
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk",
+    password: bcrypt.hashSync("dishwasher-funk",saltRounds)
   },
 };
 
@@ -309,4 +310,3 @@ app.post("/register", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
